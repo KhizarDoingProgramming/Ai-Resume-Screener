@@ -1,170 +1,169 @@
 # AI Resume Screener
 
-> no cap this thing actually slaps
+> A machine learning-powered tool that analyzes resumes against job descriptions and gives you actionable feedback.
 
-y'all ever look at a job posting and think "there's literally no way my resume covers all that"?? yeah same. so i built this.
-
-paste your resume + a job description and this ML-powered tool tells you **exactly** how cooked you are (or aren't). it's giving main character energy for your job hunt.
+Ever wonder why your resume isn't getting callbacks? This tool breaks down exactly where you stand — match score, missing skills, and what to improve. Built with semantic understanding, not just keyword matching.
 
 ---
 
-## what it does
+## What It Does
 
-- gives you a **match score (0-100)** so you know where you stand
-- shows you **matched skills** you already got and the **missing ones** you need to cook up
-- detects **key resume features** like education, experience, projects, certs
-- maps **job requirements** to your resume so you know what's actually important
-- gives **improvement suggestions** because we all need that push sometimes
-
-built with **FastAPI** + **Sentence Transformers** (`all-MiniLM-L6-v2`) for semantic matching. basically it understands the *meaning* of your resume, not just keywords. big brain energy.
+- **Match Score (0–100)** — quantifies how well your resume aligns with a job posting
+- **Skill Analysis** — identifies matched and missing skills between resume and job description
+- **Resume Feature Detection** — surfaces education, experience, projects, and certifications
+- **Job Requirement Mapping** — maps each requirement to your resume with a match percentage
+- **Improvement Suggestions** — gives specific, actionable advice to level up your resume
 
 ---
 
-## features
+## How It Works
 
-- keyword + n-gram **skill extraction** from both resume and job description
-- **semantic similarity** scoring using sentence embeddings (it actually understands context)
-- match breakdown using:
-  - overall semantic similarity
-  - skill semantic match
-  - exact overlap
-  - semantic bonus (for skills that match by meaning, not just exact words)
-  - experience signal (years detected)
-- clean web UI at `/` (single-page frontend, dark mode because we're not cavemen)
-- JSON API endpoint for programmatic use
+The scoring engine combines multiple signals:
 
----
+| Component | Weight | Description |
+|-----------|--------|-------------|
+| Semantic Similarity | 30% | How well your resume's meaning matches the job |
+| Skill Semantic Match | 25% | Semantic similarity of extracted skills |
+| Exact Skill Overlap | 30% | Direct keyword matches |
+| Semantic Bonus | 10% | Skills that match by meaning, not just exact keywords |
+| Experience Bonus | 5% | Inferred from detected years of experience |
 
-## tech stack
-
-| layer | tech |
-|-------|------|
-| backend | FastAPI + Uvicorn |
-| ML/NLP | sentence-transformers, torch, numpy, nltk |
-| API schema | Pydantic |
-| frontend | Vanilla HTML/CSS/JS (served from `static/`) |
+Powered by `all-MiniLM-L6-v2` sentence embeddings for true contextual understanding.
 
 ---
 
-## project structure
+## Tech Stack
+
+- **Backend:** FastAPI, Uvicorn
+- **ML/NLP:** sentence-transformers, PyTorch, NumPy, NLTK
+- **API Schema:** Pydantic
+- **Frontend:** Vanilla HTML/CSS/JS (dark mode UI)
+
+---
+
+## Project Structure
 
 ```
 .
-├── main.py              # API routes + mounts the frontend
-├── ml_engine.py         # core resume analysis logic (the brain)
-├── requirements.txt     # dependencies
-├── README.md            # you're reading this rn
+├── main.py              # FastAPI routes + frontend serving
+├── ml_engine.py         # Core analysis engine (skill extraction, semantic matching, scoring)
+├── requirements.txt     # Python dependencies
+├── README.md
 └── static/
-    └── index.html       # UI for pasting resume + job desc
+    └── index.html       # Single-page web interface
 ```
 
 ---
 
-## setup
+## Setup
 
-### 1) create a virtual environment
+### 1. Clone the repo
+
+```bash
+git clone git@github.com:KhizarDoingProgramming/Ai-Resume-Screener.git
+cd Ai-Resume-Screener
+```
+
+### 2. Create a virtual environment
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 2) install dependencies
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3) NLTK downloads
-
-`ml_engine.py` uses NLTK resources (punkt, stopwords, wordnet) and will download them automatically at runtime if missing. no manual setup needed fr.
+> NLTK resources (punkt, stopwords, wordnet) are downloaded automatically at runtime if missing.
 
 ---
 
-## run it
+## Running
 
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-then hit **http://localhost:8000/** and vibe.
+Open **http://localhost:8000/** in your browser.
 
 ---
 
-## API usage
+## API Reference
 
-### health check
+### `POST /api/analyze`
 
-```bash
-curl http://localhost:8000/api/health
+Analyzes a resume against a job description.
+
+**Request Body:**
+
+```json
+{
+  "resume_text": "Your resume content...",
+  "job_description": "Job posting text..."
+}
 ```
 
-### analyze a resume
+**Response:**
 
-**endpoint:** `POST /api/analyze`
-
-**body:**
-- `resume_text` (string) — paste your resume
-- `job_description` (string) — paste the job posting
-
-**example:**
-
-```bash
-curl -X POST http://localhost:8000/api/analyze \
-  -H "Content-Type: application/json" \
-  -d '{
-    "resume_text": "Your resume text here...",
-    "job_description": "Job description text here..."
-  }'
+```json
+{
+  "match_score": 72.5,
+  "matched_skills": ["python", "fastapi", "docker"],
+  "missing_skills": ["kubernetes", "terraform"],
+  "key_resume_features": ["Technical skills identified: python, fastapi", "Experience: 3+ years"],
+  "job_requirement_mapping": [
+    {
+      "requirement": "Experience with cloud platforms",
+      "importance": "high",
+      "resume_match": 45.2
+    }
+  ],
+  "resume_analysis_summary": "Moderate match (72%). 3/8 skills aligned. Semantic similarity: 68%.",
+  "improvement_suggestions": [
+    "Add or highlight these missing skills: kubernetes, terraform",
+    "Add quantifiable achievements (e.g., 'Reduced latency by 40%')"
+  ]
+}
 ```
 
-**response fields:**
+### `GET /api/health`
 
-| field | type | what it means |
-|-------|------|---------------|
-| `match_score` | number | how well you match (0-100) |
-| `matched_skills` | string[] | skills you got that they want |
-| `missing_skills` | string[] | skills you're missing |
-| `key_resume_features` | string[] | detected features (education, exp, etc) |
-| `job_requirement_mapping` | array | requirements mapped to your resume |
-| `resume_analysis_summary` | string | tl;dr of your analysis |
-| `improvement_suggestions` | string[] | how to level up your resume |
+Returns service health status.
+
+```json
+{ "status": "healthy", "version": "1.0.0" }
+```
 
 ---
 
-## how the match score works
+## Tips for Best Results
 
-the score is a weighted combo of:
-
-- **semantic similarity** (30%) — how well your resume *meaning* matches the job
-- **skill semantic match** (25%) — semantic similarity of extracted skills
-- **exact skill overlap** (30%) — direct keyword matches
-- **semantic bonus** (10%) — skills that match by meaning, not exact words
-- **experience bonus** (5%) — inferred from detected years of experience
-
-final output is clamped to **0-100** so you never see weird numbers.
+- Paste full resume sections — Skills, Work Experience, Projects, Education
+- Include the complete job description, not just the title
+- The more detail you provide, the more accurate the analysis
 
 ---
 
-## limitations & tips
+## Known Limitations
 
-- accuracy depends on how well you paste your resume/job text
-  - include sections like **Skills, Work Experience, Projects, Education**
-- long inputs can increase compute time (semantic embeddings are expensive)
-- paste the **full job description** and relevant resume sections for best results
-- this is a screening tool, not a recruiter replacement (yet)
+- Requires manual copy-paste (no file upload yet)
+- Long inputs increase processing time
+- Accuracy depends on resume/job description quality
 
 ---
 
-## future improvements
+## Roadmap
 
-- [ ] PDF/DOCX file upload support (no more copy-paste grind)
-- [ ] expanded skills taxonomy or user-defined skill sets
-- [ ] cache embeddings for better performance
-- [ ] persistence/history so you can track your progress over time
+- [ ] PDF/DOCX file upload support
+- [ ] Configurable skill taxonomy
+- [ ] Embedding caching for faster analysis
+- [ ] Analysis history and tracking
 
 ---
 
-## license
+## License
 
-nothing just clone it and use it. go get that bag.
+MIT — do whatever you want with it.
